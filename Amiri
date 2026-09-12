@@ -23,7 +23,7 @@ local Library = {
     Flags = { },
     MenuKeybind = tostring(Enum.KeyCode.X), -- has to be a string
 
-    Directory = "amiri",
+    Directory = "juanitaaaaaaa",
     Folders = {
         Assets = "/Assets",
         Configs = "/Configs",
@@ -2684,7 +2684,179 @@ local Library = {
                     BorderSizePixel = 0
                 })
 
+                -- Mobile control buttons (Menu toggle + Lock)
+                -- Positioned top-right of the titlebar; visible always on mobile, hidden on desktop
+                Items["MobileButtonHolder"] = Library:Create("Frame", {
+                    Name = "\0",
+                    Parent = Items["Background"].Instance,
+                    AnchorPoint = Vector2.new(1, 0),
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(1, 0, 0, 0),
+                    Size = UDim2.new(0, 0, 0, 30),
+                    BorderSizePixel = 0,
+                    AutomaticSize = Enum.AutomaticSize.X,
+                    ZIndex = 3,
+                    Visible = IsMobile
+                })
+
+                Library:Create("UIListLayout", {
+                    Name = "\0",
+                    Parent = Items["MobileButtonHolder"].Instance,
+                    VerticalAlignment = Enum.VerticalAlignment.Center,
+                    FillDirection = Enum.FillDirection.Horizontal,
+                    Padding = UDim.new(0, 2),
+                    SortOrder = Enum.SortOrder.LayoutOrder
+                })
+
+                Library:Create("UIPadding", {
+                    Name = "\0",
+                    Parent = Items["MobileButtonHolder"].Instance,
+                    PaddingRight = UDim.new(0, 6),
+                    PaddingLeft = UDim.new(0, 4)
+                })
+
+                -- Menu button: taps open/close the window
+                Items["MenuButton"] = Library:Create("TextButton", {
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    TextSize = Library.FontSize,
+                    Parent = Items["MobileButtonHolder"].Instance,
+                    TextColor3 = Library.Theme["Accent"],
+                    Text = "menu",
+                    AutoButtonColor = false,
+                    Size = UDim2.new(0, 0, 0, 18),
+                    AutomaticSize = Enum.AutomaticSize.X,
+                    BackgroundColor3 = Library.Theme["Element"],
+                    BorderSizePixel = 0,
+                    ZIndex = 3
+                }):AddToTheme({TextColor3 = "Accent", BackgroundColor3 = "Element"})
+
+                Library:Create("UICorner", {
+                    Name = "\0",
+                    Parent = Items["MenuButton"].Instance,
+                    CornerRadius = UDim.new(0, 3)
+                })
+
+                Library:Create("UIStroke", {
+                    Name = "\0",
+                    Parent = Items["MenuButton"].Instance,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                    LineJoinMode = Enum.LineJoinMode.Miter,
+                    Color = Library.Theme["Outline"],
+                    Thickness = 1
+                }):AddToTheme({Color = "Outline"})
+
+                Library:Create("UIPadding", {
+                    Name = "\0",
+                    Parent = Items["MenuButton"].Instance,
+                    PaddingLeft = UDim.new(0, 5),
+                    PaddingRight = UDim.new(0, 5)
+                })
+
+                -- Lock button: locks/unlocks dragging of the window
+                Items["LockButton"] = Library:Create("TextButton", {
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    TextSize = Library.FontSize,
+                    Parent = Items["MobileButtonHolder"].Instance,
+                    TextColor3 = Library.Theme["Inactive Text"],
+                    Text = "lock",
+                    AutoButtonColor = false,
+                    Size = UDim2.new(0, 0, 0, 18),
+                    AutomaticSize = Enum.AutomaticSize.X,
+                    BackgroundColor3 = Library.Theme["Element"],
+                    BorderSizePixel = 0,
+                    ZIndex = 3
+                }):AddToTheme({TextColor3 = "Inactive Text", BackgroundColor3 = "Element"})
+
+                Library:Create("UICorner", {
+                    Name = "\0",
+                    Parent = Items["LockButton"].Instance,
+                    CornerRadius = UDim.new(0, 3)
+                })
+
+                Library:Create("UIStroke", {
+                    Name = "\0",
+                    Parent = Items["LockButton"].Instance,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                    LineJoinMode = Enum.LineJoinMode.Miter,
+                    Color = Library.Theme["Outline"],
+                    Thickness = 1
+                }):AddToTheme({Color = "Outline"})
+
+                Library:Create("UIPadding", {
+                    Name = "\0",
+                    Parent = Items["LockButton"].Instance,
+                    PaddingLeft = UDim.new(0, 5),
+                    PaddingRight = UDim.new(0, 5)
+                })
+
                 Window.Items = Items
+            end
+
+            local WindowLocked = false
+
+            -- Override MakeDraggable result: when locked, block drag start on Outline
+            local OriginalOutlineInputBegan
+            do
+                -- Patch: wrap the existing InputBegan on Outline so lock state is respected
+                -- We disconnect the original draggable connection and reinstall a gated one
+                local Gui = Items["Outline"].Instance
+                local Dragging = false
+                local DragStart
+                local StartPosition
+
+                local function DoSet(Input)
+                    if WindowLocked then return end
+                    local Scale = Library:GetScreenScale()
+                    local DragDelta = (Input.Position - DragStart) / Scale
+                    local NewX = StartPosition.X.Offset + DragDelta.X
+                    local NewY = StartPosition.Y.Offset + DragDelta.Y
+                    local ScreenSize = Gui.Parent.AbsoluteSize / Scale
+                    local GuiSize = Gui.AbsoluteSize / Scale
+                    NewX = math.clamp(NewX, 0, ScreenSize.X - GuiSize.X)
+                    NewY = math.clamp(NewY, 0, ScreenSize.Y - GuiSize.Y)
+                    Items["Outline"]:Tween({Position = UDim2.new(0, NewX, 0, NewY)}, TweenInfo.new(0.65, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out))
+                end
+
+                -- Disconnect the draggable connections added by MakeDraggable above
+                -- We can't easily do that, so instead gate via WindowLocked at the RenderStepped level.
+                -- The simplest approach: shadow-patch by reconnecting on Outline InputBegan
+                -- MakeDraggable already connected; we just check WindowLocked inside the UserInputService.InputChanged handler.
+                -- Since we can't easily remove those connections, we patch by adding a secondary
+                -- InputBegan that cancels drag if locked — but MakeDraggable's own handler already
+                -- sets Dragging=true internally. The cleanest fix: rebuild drag here with lock gate.
+                -- MakeDraggable was already called above on Outline. We accept its connections exist.
+                -- We guard via LockButton toggling Items["Outline"].Instance's Active property,
+                -- which prevents InputBegan from firing on the frame when locked.
+                -- This is the correct Roblox pattern for disabling drag on a frame.
+            end
+
+            -- Menu button: toggle window open/close
+            if IsMobile then
+                Items["MenuButton"]:Connect("MouseButton1Click", function()
+                    Window:SetOpen(not Window.IsOpen)
+                end)
+
+                -- Lock button: toggle drag lock state
+                Items["LockButton"]:Connect("MouseButton1Click", function()
+                    WindowLocked = not WindowLocked
+
+                    if WindowLocked then
+                        -- Locked: disable Active so drag InputBegan won't fire on the outline frame
+                        Items["Outline"].Instance.Active = false
+                        Items["LockButton"]:Tween({TextColor3 = Library.Theme.Accent})
+                        Items["LockButton"]:ChangeItemTheme({TextColor3 = "Accent"})
+                        -- Also lock the menu button itself so it can't be accidentally dragged
+                        Items["MenuButton"].Instance.Active = false
+                    else
+                        -- Unlocked: restore Active so dragging works again
+                        Items["Outline"].Instance.Active = true
+                        Items["LockButton"]:Tween({TextColor3 = Library.Theme["Inactive Text"]})
+                        Items["LockButton"]:ChangeItemTheme({TextColor3 = "Inactive Text"})
+                        Items["MenuButton"].Instance.Active = true
+                    end
+                end)
             end
 
             local Debounce = false
