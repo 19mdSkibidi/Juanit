@@ -15,7 +15,7 @@ local CoreGui = cloneref(game:GetService("CoreGui"))
 gethui = gethui or function() return CoreGui end
 
 local LocalPlayer = Players.LocalPlayer
-local IsMobile = UserInputService.TouchEnabled or false
+local IsMobile = true
 local GuiInset = GuiService:GetGuiInset().Y
 local Mouse = cloneref(LocalPlayer:GetMouse())
 
