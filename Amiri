@@ -2690,13 +2690,15 @@ local Library = {
             -- ── Standalone Menu button ────────────────────────────────────────────
             -- Parented to Library.Holder.Instance exactly like the watermark/keybind list.
             -- Separate draggable frame, separate position, independent of the UI window.
+            -- Shared size constants for both buttons — fixed width, no AutomaticSize on the outer frame
+            local BTN_W, BTN_H = 70, 28
+
             local MenuBtn = { Items = {} } do
                 local MBFrame = Library:Create("Frame", {
                     Name = "\0",
                     Parent = Library.Holder.Instance,
                     Position = UDim2.new(0, 10, 0, GuiInset + 70),
-                    Size = UDim2.new(0, 0, 0, 25),
-                    AutomaticSize = Enum.AutomaticSize.X,
+                    Size = UDim2.new(0, BTN_W, 0, BTN_H),
                     BorderSizePixel = 0,
                     BackgroundColor3 = Library.Theme["Background"]
                 }):AddToTheme({BackgroundColor3 = "Background"})
@@ -2720,11 +2722,9 @@ local Library = {
                     Color = Library.Theme["Outline"]
                 }):AddToTheme({Color = "Outline"})
 
-                -- Accent liner on top, same as watermark
                 local MBLiner = Library:Create("Frame", {
                     Name = "\0",
                     Parent = MBFrame.Instance,
-                    AnchorPoint = Vector2.new(0, 0),
                     Position = UDim2.new(0, 0, 0, 0),
                     Size = UDim2.new(1, 0, 0, 2),
                     BorderSizePixel = 0,
@@ -2746,12 +2746,12 @@ local Library = {
                     SliceCenter = Rect.new(Vector2.new(21, 21), Vector2.new(79, 79))
                 }):AddToTheme({ImageColor3 = "Accent"})
 
+                -- Inner content frame: fills the button below the liner
                 local MBInner = Library:Create("Frame", {
                     Name = "\0",
                     Parent = MBFrame.Instance,
-                    Position = UDim2.new(0, 0, 0, 5),
-                    Size = UDim2.new(0, 0, 0, 16),
-                    AutomaticSize = Enum.AutomaticSize.X,
+                    Position = UDim2.new(0, 0, 0, 2),
+                    Size = UDim2.new(1, 0, 1, -2),
                     BorderSizePixel = 0,
                     BackgroundColor3 = Library.Theme["Inline"]
                 }):AddToTheme({BackgroundColor3 = "Inline"})
@@ -2764,22 +2764,7 @@ local Library = {
                     Color = Library.Theme["Outline"]
                 }):AddToTheme({Color = "Outline"})
 
-                Library:Create("UIStroke", {
-                    Name = "\0",
-                    Parent = MBInner.Instance,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-                    LineJoinMode = Enum.LineJoinMode.Miter,
-                    Color = Library.Theme["Border"],
-                    BorderOffset = UDim.new(0, 1)
-                }):AddToTheme({Color = "Border"})
-
-                Library:Create("UIPadding", {
-                    Name = "\0",
-                    Parent = MBInner.Instance,
-                    PaddingLeft = UDim.new(0, 8),
-                    PaddingRight = UDim.new(0, 8)
-                })
-
+                -- Clickable label centered in the inner frame
                 local MBLabel = Library:Create("TextButton", {
                     Name = "\0",
                     FontFace = Library.Font,
@@ -2788,10 +2773,9 @@ local Library = {
                     TextColor3 = Library.Theme["Accent"],
                     Text = "menu",
                     AutoButtonColor = false,
-                    AnchorPoint = Vector2.new(0, 0.5),
-                    Position = UDim2.new(0, 0, 0.5, -1),
-                    Size = UDim2.new(0, 0, 0, 0),
-                    AutomaticSize = Enum.AutomaticSize.XY,
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(0.5, 0, 0.5, 0),
+                    Size = UDim2.new(1, 0, 1, 0),
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0
                 }):AddToTheme({TextColor3 = "Accent"})
@@ -2804,15 +2788,12 @@ local Library = {
                 end)
             end
 
-            -- ── Standalone Lock button ────────────────────────────────────────────
-            -- Same construction, different position, independent drag surface.
             local LockBtn = { Items = {}, Locked = false } do
                 local LBFrame = Library:Create("Frame", {
                     Name = "\0",
                     Parent = Library.Holder.Instance,
-                    Position = UDim2.new(0, 10, 0, GuiInset + 100),
-                    Size = UDim2.new(0, 0, 0, 25),
-                    AutomaticSize = Enum.AutomaticSize.X,
+                    Position = UDim2.new(0, 10, 0, GuiInset + 70 + BTN_H + 6),
+                    Size = UDim2.new(0, BTN_W, 0, BTN_H),
                     BorderSizePixel = 0,
                     BackgroundColor3 = Library.Theme["Background"]
                 }):AddToTheme({BackgroundColor3 = "Background"})
@@ -2839,7 +2820,6 @@ local Library = {
                 local LBLiner = Library:Create("Frame", {
                     Name = "\0",
                     Parent = LBFrame.Instance,
-                    AnchorPoint = Vector2.new(0, 0),
                     Position = UDim2.new(0, 0, 0, 0),
                     Size = UDim2.new(1, 0, 0, 2),
                     BorderSizePixel = 0,
@@ -2864,9 +2844,8 @@ local Library = {
                 local LBInner = Library:Create("Frame", {
                     Name = "\0",
                     Parent = LBFrame.Instance,
-                    Position = UDim2.new(0, 0, 0, 5),
-                    Size = UDim2.new(0, 0, 0, 16),
-                    AutomaticSize = Enum.AutomaticSize.X,
+                    Position = UDim2.new(0, 0, 0, 2),
+                    Size = UDim2.new(1, 0, 1, -2),
                     BorderSizePixel = 0,
                     BackgroundColor3 = Library.Theme["Inline"]
                 }):AddToTheme({BackgroundColor3 = "Inline"})
@@ -2879,22 +2858,6 @@ local Library = {
                     Color = Library.Theme["Outline"]
                 }):AddToTheme({Color = "Outline"})
 
-                Library:Create("UIStroke", {
-                    Name = "\0",
-                    Parent = LBInner.Instance,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-                    LineJoinMode = Enum.LineJoinMode.Miter,
-                    Color = Library.Theme["Border"],
-                    BorderOffset = UDim.new(0, 1)
-                }):AddToTheme({Color = "Border"})
-
-                Library:Create("UIPadding", {
-                    Name = "\0",
-                    Parent = LBInner.Instance,
-                    PaddingLeft = UDim.new(0, 8),
-                    PaddingRight = UDim.new(0, 8)
-                })
-
                 local LBLabel = Library:Create("TextButton", {
                     Name = "\0",
                     FontFace = Library.Font,
@@ -2903,10 +2866,9 @@ local Library = {
                     TextColor3 = Library.Theme["Inactive Text"],
                     Text = "lock",
                     AutoButtonColor = false,
-                    AnchorPoint = Vector2.new(0, 0.5),
-                    Position = UDim2.new(0, 0, 0.5, -1),
-                    Size = UDim2.new(0, 0, 0, 0),
-                    AutomaticSize = Enum.AutomaticSize.XY,
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(0.5, 0, 0.5, 0),
+                    Size = UDim2.new(1, 0, 1, 0),
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0
                 }):AddToTheme({TextColor3 = "Inactive Text"})
@@ -2918,12 +2880,16 @@ local Library = {
                     LockBtn.Locked = not LockBtn.Locked
 
                     if LockBtn.Locked then
-                        -- Gate drag on the main window by disabling Active on its root frame
+                        -- Kill drag on: main window, menu button frame, lock button frame
                         Items["Outline"].Instance.Active = false
+                        MenuBtn.Items.Frame.Instance.Active = false
+                        LBFrame.Instance.Active = false
                         LBLabel:Tween({TextColor3 = Library.Theme.Accent})
                         LBLabel:ChangeItemTheme({TextColor3 = "Accent"})
                     else
                         Items["Outline"].Instance.Active = true
+                        MenuBtn.Items.Frame.Instance.Active = true
+                        LBFrame.Instance.Active = true
                         LBLabel:Tween({TextColor3 = Library.Theme["Inactive Text"]})
                         LBLabel:ChangeItemTheme({TextColor3 = "Inactive Text"})
                     end
