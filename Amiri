@@ -2788,8 +2788,11 @@ local Library = {
                 end)
             end
 
-            local LockBtn = { Items = {}, Locked = false } do
-                local LBFrame = Library:Create("Frame", {
+            -- Lock button — standalone, same construction as menu button
+            -- Gates ALL draggable surfaces: window, watermark, keybind list, menu btn, itself
+            local LockLocked = false
+            local LBFrame do
+                LBFrame = Library:Create("Frame", {
                     Name = "\0",
                     Parent = Library.Holder.Instance,
                     Position = UDim2.new(0, 10, 0, GuiInset + 70 + BTN_H + 6),
@@ -2873,23 +2876,42 @@ local Library = {
                     BorderSizePixel = 0
                 }):AddToTheme({TextColor3 = "Inactive Text"})
 
-                LockBtn.Items.Frame = LBFrame
-                LockBtn.Items.Label = LBLabel
+                -- Helper: set Active on a Library wrapper frame safely
+                local function SetDrag(LibFrame, State)
+                    if LibFrame and LibFrame.Instance then
+                        LibFrame.Instance.Active = State
+                    end
+                end
 
                 LBLabel:Connect("MouseButton1Click", function()
-                    LockBtn.Locked = not LockBtn.Locked
+                    LockLocked = not LockLocked
 
-                    if LockBtn.Locked then
-                        -- Kill drag on: main window, menu button frame, lock button frame
-                        Items["Outline"].Instance.Active = false
-                        MenuBtn.Items.Frame.Instance.Active = false
-                        LBFrame.Instance.Active = false
+                    -- Every draggable surface in the session gets gated at once
+                    -- Items["Outline"]   → the main window root frame
+                    -- Library.Watermark  → watermark frame (set by Library:Watermark())
+                    -- Library.KeyList    → keybind list frame (set by Library:KeybindList())
+                    -- MenuBtn.Items.Frame → menu button standalone frame
+                    -- LBFrame itself     → lock button standalone frame
+                    local active = not LockLocked
+
+                    SetDrag(Items["Outline"], active)
+                    SetDrag(MenuBtn.Items.Frame, active)
+                    SetDrag(LBFrame, active)
+
+                    -- Watermark and KeybindList are created after Window in caller scope;
+                    -- gate via the Library-level references which are populated by the time
+                    -- the user can tap the lock button
+                    if Library.Watermark and Library.Watermark.Items and Library.Watermark.Items["Watermark"] then
+                        Library.Watermark.Items["Watermark"].Instance.Active = active
+                    end
+                    if Library.KeyList and Library.KeyList.Items and Library.KeyList.Items["KeybindList"] then
+                        Library.KeyList.Items["KeybindList"].Instance.Active = active
+                    end
+
+                    if LockLocked then
                         LBLabel:Tween({TextColor3 = Library.Theme.Accent})
                         LBLabel:ChangeItemTheme({TextColor3 = "Accent"})
                     else
-                        Items["Outline"].Instance.Active = true
-                        MenuBtn.Items.Frame.Instance.Active = true
-                        LBFrame.Instance.Active = true
                         LBLabel:Tween({TextColor3 = Library.Theme["Inactive Text"]})
                         LBLabel:ChangeItemTheme({TextColor3 = "Inactive Text"})
                     end
